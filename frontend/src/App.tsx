@@ -46,8 +46,8 @@ export function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-lg text-gray-600">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-100">
+        <div className="text-lg text-slate-600">Loading...</div>
       </div>
     );
   }
@@ -64,10 +64,10 @@ export function App() {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="bg-white shadow">
+      <nav className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">GridLens</h1>
+            <h1 className="text-2xl font-bold text-slate-900">GridLens</h1>
             
             <div className="flex items-center gap-6">
               <div className="flex gap-4">
@@ -75,8 +75,8 @@ export function App() {
                   onClick={() => setCurrentPage('dashboard')}
                   className={`px-4 py-2 rounded-lg font-semibold transition ${
                     currentPage === 'dashboard'
-                      ? 'bg-blue-500 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-violet-600 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   Dashboard
@@ -85,8 +85,8 @@ export function App() {
                   onClick={() => setCurrentPage('history')}
                   className={`px-4 py-2 rounded-lg font-semibold transition ${
                     currentPage === 'history'
-                      ? 'bg-blue-500 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-violet-600 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   History
@@ -95,16 +95,16 @@ export function App() {
                   onClick={() => setCurrentPage('comparison')}
                   className={`px-4 py-2 rounded-lg font-semibold transition ${
                     currentPage === 'comparison'
-                      ? 'bg-blue-500 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-violet-600 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   Comparison
                 </button>
               </div>
 
-              <div className="flex items-center gap-4 pl-4 border-l border-gray-300">
-                <span className="text-sm text-gray-600">{user.email}</span>
+              <div className="flex items-center gap-4 pl-4 border-l border-slate-300">
+                <span className="text-sm text-slate-600">{user.email}</span>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-semibold"

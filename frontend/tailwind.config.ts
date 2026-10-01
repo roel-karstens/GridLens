@@ -9,21 +9,21 @@ const config: Config = {
     extend: {
       colors: {
         destructive: 'hsl(0 84% 60%)',
-        border: 'hsl(214 31.8% 91.4%)',
-        input: 'hsl(214 31.8% 91.4%)',
-        ring: 'hsl(212 95% 58%)',
+        border: 'hsl(216 12.2% 83.9%)',
+        input: 'hsl(216 12.2% 83.9%)',
+        ring: 'hsl(263 80% 50%)',
         background: 'hsl(0 0% 100%)',
-        foreground: 'hsl(212 12% 3.9%)',
+        foreground: 'hsl(215 13.8% 34.9%)',
         primary: {
-          DEFAULT: 'hsl(212 95% 58%)',
+          DEFAULT: 'hsl(263 80% 50%)',
           foreground: 'hsl(210 40% 98%)',
         },
         secondary: {
-          DEFAULT: 'hsl(210 40% 96%)',
-          foreground: 'hsl(212 12% 3.9%)',
+          DEFAULT: 'hsl(216 14.3% 95.3%)',
+          foreground: 'hsl(215 13.8% 34.9%)',
         },
         muted: {
-          DEFAULT: 'hsl(210 40% 96%)',
+          DEFAULT: 'hsl(216 14.3% 95.3%)',
           foreground: 'hsl(215.4 16.3% 46.9%)',
         },
       },
