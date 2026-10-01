@@ -55,7 +55,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor="country-select" className="font-semibold text-gray-700">
+      <label htmlFor="country-select" className="font-semibold text-slate-700">
         Select Country
       </label>
       <select
@@ -63,7 +63,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
         value={selectedCountry}
         onChange={(e) => onSelectCountry(e.target.value)}
         disabled={disabled || isLoading}
-        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+        className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-slate-100 disabled:cursor-not-allowed"
       >
         {countries.map((country) => (
           <option key={country.code} value={country.code}>

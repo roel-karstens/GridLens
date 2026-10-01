@@ -72,14 +72,14 @@ export function ComparisonPage() {
   }[metric] || metric;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
             Country Comparison
           </h1>
-          <p className="text-gray-600">
+          <p className="text-slate-600">
             Compare electricity metrics across European countries
           </p>
         </div>
@@ -112,8 +112,8 @@ export function ComparisonPage() {
                   onClick={() => toggleCountry(country)}
                   className={`px-4 py-2 rounded-lg font-semibold transition ${
                     selectedCountries.includes(country)
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                      ? 'bg-violet-600 text-white hover:bg-violet-700'
+                      : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
                   }`}
                 >
                   {country}

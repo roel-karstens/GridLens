@@ -29,20 +29,20 @@ export function DashboardPage() {
   const mix = mixData.state === 'loaded' ? mixData.data : undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
             European Electricity Explorer
           </h1>
-          <p className="text-gray-600">
+          <p className="text-slate-600">
             Real-time electricity data from ENTSO-E Transparency Platform
           </p>
         </div>
 
         {/* Country Selector */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8">
           <CountrySelector
             selectedCountry={selectedCountry}
             onSelectCountry={setSelectedCountry}

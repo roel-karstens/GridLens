@@ -7,7 +7,28 @@
 - FastAPI + Python backend (Pydantic, Ruff, Pyright, pytest)
 - Supabase PostgreSQL + Auth + Row Level Security
 - External API: ENTSO-E Transparency Platform (REST + XML)
-- Status: MVP (Phase 2 complete, Phase 3 in progress)
+- Status: MVP (Phases 2-7 complete, production-ready)
+
+## Design & UI Philosophy
+
+**Obsidian Premium-inspired aesthetic** — Sophisticated, professional, minimal:
+
+- **Color Palette**: Slate grays + violet accents (not bright blue)
+- **Buttons**: Violet (`violet-600`) instead of blue
+- **Backgrounds**: Slate gradients (`slate-50` to `slate-100`)
+- **Accents**: Emerald for renewable/positive metrics (`emerald-500`, `emerald-600`)
+- **Cards**: White with subtle `shadow-sm` and `border-slate-200`
+- **Typography**: `slate-900` for headings, `slate-600` for body (not generic gray)
+- **No "AI Slop"**: Avoid bright, generic colors. Aim for refined, professional UI.
+
+**Key Components**:
+- Buttons use `violet-600` (primary) and `slate-200` (secondary)
+- Spinners use `border-violet-500`
+- Progress bars use `bg-emerald-500`
+- All focus rings use `focus:ring-violet-500`
+- All cards use `border-slate-200` (not `border-gray-300`)
+
+See [docs/design.md](../../docs/design.md) for complete style guide.
 
 ## Architecture
 

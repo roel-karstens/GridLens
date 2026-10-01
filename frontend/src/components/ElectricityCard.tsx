@@ -26,8 +26,8 @@ export const ElectricityCard: React.FC<ElectricityCardProps> = ({
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-          <p className="mt-4 text-gray-500">Loading data for {countryCode}...</p>
+          <div className="animate-spin h-8 w-8 border-4 border-violet-500 border-t-transparent rounded-full mx-auto"></div>
+          <p className="mt-4 text-slate-500">Loading data for {countryCode}...</p>
         </div>
       </div>
     );
@@ -47,7 +47,7 @@ export const ElectricityCard: React.FC<ElectricityCardProps> = ({
   if (!data) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-center text-gray-500">
+        <div className="text-center text-slate-500">
           <p>No data available for {countryCode}</p>
         </div>
       </div>
@@ -60,23 +60,23 @@ export const ElectricityCard: React.FC<ElectricityCardProps> = ({
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">{countryCode}</h2>
-        <span className="text-sm text-gray-500">Updated: {lastUpdate}</span>
+        <h2 className="text-2xl font-bold text-slate-900">{countryCode}</h2>
+        <span className="text-sm text-slate-500">Updated: {lastUpdate}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         {/* Current Demand */}
-        <div className="border-l-4 border-blue-500 pl-4">
-          <p className="text-gray-500 text-sm">Current Demand</p>
-          <p className="text-2xl font-bold text-gray-800">
+        <div className="border-l-4 border-violet-500 pl-4">
+          <p className="text-slate-500 text-sm">Current Demand</p>
+          <p className="text-2xl font-bold text-slate-900">
             {data.load_mw ? `${(data.load_mw / 1000).toFixed(1)} GW` : '—'}
           </p>
         </div>
 
         {/* Total Generation */}
-        <div className="border-l-4 border-green-500 pl-4">
-          <p className="text-gray-500 text-sm">Total Generation</p>
-          <p className="text-2xl font-bold text-gray-800">
+        <div className="border-l-4 border-emerald-500 pl-4">
+          <p className="text-slate-500 text-sm">Total Generation</p>
+          <p className="text-2xl font-bold text-slate-900">
             {data.total_generation_mw ? `${(data.total_generation_mw / 1000).toFixed(1)} GW` : '—'}
           </p>
         </div>
@@ -85,12 +85,12 @@ export const ElectricityCard: React.FC<ElectricityCardProps> = ({
       {/* Renewable Percentage */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-gray-600 font-semibold">Renewable Share</p>
-          <p className="text-2xl font-bold text-green-600">{renewablePercent.toFixed(1)}%</p>
+          <p className="text-slate-600 font-semibold">Renewable Share</p>
+          <p className="text-2xl font-bold text-emerald-600">{renewablePercent.toFixed(1)}%</p>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-slate-200 rounded-full h-3">
           <div
-            className="bg-green-500 h-3 rounded-full transition-all duration-500"
+            className="bg-emerald-500 h-3 rounded-full transition-all duration-500"
             style={{ width: `${Math.min(renewablePercent, 100)}%` }}
           ></div>
         </div>
