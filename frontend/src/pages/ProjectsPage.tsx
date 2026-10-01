@@ -152,9 +152,9 @@ export function ProjectsPage({ user, onLogout }: ProjectsPageProps) {
 
   if (!token) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
-          <div className="text-lg text-muted-foreground mb-4">Authenticating...</div>
+          <div className="text-lg text-slate-600 mb-4">Authenticating...</div>
           {authError && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 max-w-sm mx-auto">
               <p className="text-sm text-red-800 mb-2">{authError}</p>
@@ -167,18 +167,18 @@ export function ProjectsPage({ user, onLogout }: ProjectsPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <header className="border-b border-slate-200 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Projects</h1>
-              <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
-              <p className="text-xs text-gray-500 mt-0.5 font-mono">ID: {user.id.substring(0, 8)}...</p>
+              <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
+              <p className="text-sm text-slate-600 mt-1">{user.email}</p>
+              <p className="text-xs text-slate-500 mt-0.5 font-mono">ID: {user.id.substring(0, 8)}...</p>
             </div>
             <div className="flex items-center gap-3">
               {DEV_MODE && (
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                <span className="text-xs bg-violet-100 text-violet-800 px-2 py-1 rounded-full">
                   🚀 Dev Mode
                 </span>
               )}

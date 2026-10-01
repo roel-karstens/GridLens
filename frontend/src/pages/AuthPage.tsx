@@ -75,20 +75,20 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold text-slate-900">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Manage your projects with ease
+          <p className="mt-2 text-sm text-slate-600">
+            Manage your electricity data with ease
           </p>
         </div>
 
         {DEV_MODE && (
-          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <p className="text-sm text-yellow-800">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm text-amber-900">
               <strong>🚀 Development Mode:</strong> Use the button below to test without Supabase auth
             </p>
           </div>
@@ -164,7 +164,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         )}
 
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-600">
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}
             {' '}
             <button
@@ -174,7 +174,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 setError(null);
               }}
               disabled={loading}
-              className="font-semibold text-primary hover:underline disabled:opacity-50"
+              className="font-semibold text-violet-600 hover:text-violet-700 disabled:opacity-50"
             >
               {isSignUp ? 'Sign In' : 'Sign Up'}
             </button>
