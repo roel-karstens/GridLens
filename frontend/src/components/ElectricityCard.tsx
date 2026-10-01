@@ -54,7 +54,7 @@ export const ElectricityCard: React.FC<ElectricityCardProps> = ({
     );
   }
 
-  const renewablePercent = data.renewable_share_percent ?? 0;
+  const renewablePercent = typeof data.renewable_share_percent === 'number' ? data.renewable_share_percent : 0;
   const lastUpdate = new Date(data.last_updated).toLocaleTimeString();
 
   return (

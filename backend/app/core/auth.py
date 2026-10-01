@@ -1,14 +1,18 @@
 import jwt
 import logging
+import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
+# Dev mode: skip authentication (set via environment variable)
+DEV_SKIP_AUTH = os.getenv("DEV_SKIP_AUTH", "false").lower() == "true"
+
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> str:
     """
     Extract and verify JWT token from request.
@@ -19,6 +23,17 @@ async def get_current_user(
     Raises:
         HTTPException: 401 Unauthorized if token is invalid or missing.
     """
+    # Dev mode: skip authentication
+    if DEV_SKIP_AUTH:
+        logger.warning("⚠️  DEV_SKIP_AUTH enabled - authentication bypassed")
+        return "dev-user-123"
+
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
     try:
         token = credentials.credentials
         # Decode without signature verification for now

@@ -28,12 +28,12 @@ export function ComparisonPage() {
         const results: Array<{ country: string; load: number; renewable: number; generation: number }> = [];
         for (const country of selectedCountries) {
           try {
-            const status = await client.get<{ load_mw: number; renewable_share_percent: number; total_generation_mw: number }>(`/api/v1/electricity/current/${country}`);
+            const status = await client.get<{ load_mw: number | null; renewable_share_percent: number | null; total_generation_mw: number | null }>(`/api/v1/electricity/current/${country}`);
             results.push({
               country: country,
-              load: (status.load_mw || 0) / 1000,
-              renewable: status.renewable_share_percent || 0,
-              generation: (status.total_generation_mw || 0) / 1000,
+              load: typeof status.load_mw === 'number' ? status.load_mw / 1000 : 0,
+              renewable: typeof status.renewable_share_percent === 'number' ? status.renewable_share_percent : 0,
+              generation: typeof status.total_generation_mw === 'number' ? status.total_generation_mw / 1000 : 0,
             });
           } catch (error) {
             // Continue with other countries if one fails
