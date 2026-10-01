@@ -2,38 +2,32 @@
 applyTo: "supabase/**/*.sql"
 ---
 
-# Database Instructions
+# Database Instructions — GridLens
 
 ## Migrations
 
 All schema changes go through numbered migrations in `supabase/migrations/`:
 
 ```
-0001_initial_schema.sql
-0002_add_users_table.sql
-0003_create_rls_policies.sql
+0001_initial_schema.sql          # Projects table (starter)
+0002_electricity_schema.sql      # ElectricityObservation table (Phase 2)
+0003_add_indices.sql             # Performance indexes (Phase 2+)
 ```
 
-### Alternative: Auto-Migrations via Python (SQLAlchemy)
+### GridLens Approach: Auto-Migrations via Python (SQLAlchemy)
 
-For development/prototyping, this starter also supports auto-creating schema from Python models:
+GridLens uses auto-creating schema from Python models:
 
 **Pattern**: Tables defined in `backend/app/models/` are auto-created on backend startup.
 
-**When to use**:
+**Advantages**:
 - ✅ Development/local testing (zero-friction setup)
 - ✅ Rapid prototyping with frequent schema changes
-- ✅ Demo/learning projects (like this starter)
+- ✅ Type-safe schema definitions (models are the source of truth)
 
-**When NOT to use**:
-- ❌ Production deployments (no versioning trail)
-- ❌ Multi-team environments (schema changes not tracked separately)
-- ❌ Complex migrations (need raw SQL control)
-
-**For production**, use Alembic to generate SQL migrations from models:
-```bash
-alembic revision --autogenerate -m "add tags table"
-```
+**For production**:
+- Consider Alembic to generate SQL migrations from models
+- Or run migrations manually in Supabase
 
 See [ADR-002](../../docs/decisions/ADR-002-auto-migrations-via-python.md) for trade-off analysis.
 
@@ -45,145 +39,185 @@ See [ADR-002](../../docs/decisions/ADR-002-auto-migrations-via-python.md) for tr
 - Test locally before committing
 - No destructive changes without approval
 
-```sql
--- 0002_add_tags_table.sql
+Example (electricity_observations table):
 
--- Create tags table
-CREATE TABLE IF NOT EXISTS tags (
+```sql
+-- 0002_electricity_schema.sql
+
+-- Create electricity_observations table
+CREATE TABLE IF NOT EXISTS electricity_observations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name text NOT NULL,
+  country_code text NOT NULL,
+  timestamp timestamp with time zone NOT NULL,
+  metric text NOT NULL,
+  value_mw numeric(12,2) NOT NULL,
+  unit text NOT NULL DEFAULT 'MW',
+  source text NOT NULL DEFAULT 'ENTSO-E',
+  source_dataset text NOT NULL,
+  source_timestamp timestamp with time zone NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  UNIQUE(owner_id, name)
+  
+  -- Prevent duplicate observations
+  UNIQUE(country_code, timestamp, metric),
+  
+  -- Ensure valid values
+  CHECK (value_mw >= 0),
+  CHECK (country_code ~ '^[A-Z]{2}$'),  -- 2-letter country code
+  CHECK (metric IN ('load', 'solar', 'wind_onshore', 'wind_offshore', 'nuclear', 'gas', 'coal', 'hydro', 'biomass'))
 );
 
 -- Enable RLS
-ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE electricity_observations ENABLE ROW LEVEL SECURITY;
 
--- RLS: Users can only read their own tags
-CREATE POLICY "Users can read own tags" ON tags
-  FOR SELECT USING (auth.uid() = owner_id);
+-- RLS: All authenticated users can read electricity data (public data)
+CREATE POLICY "authenticated_read" ON electricity_observations
+  FOR SELECT USING (auth.role() = 'authenticated');
 
--- RLS: Users can create tags
-CREATE POLICY "Users can create tags" ON tags
-  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+-- RLS: Deny INSERT/UPDATE/DELETE from API (backend only)
+CREATE POLICY "deny_insert" ON electricity_observations
+  FOR INSERT WITH CHECK (false);
+CREATE POLICY "deny_update" ON electricity_observations
+  FOR UPDATE WITH CHECK (false);
+CREATE POLICY "deny_delete" ON electricity_observations
+  FOR DELETE USING (false);
 
--- RLS: Users can update own tags
-CREATE POLICY "Users can update own tags" ON tags
-  FOR UPDATE USING (auth.uid() = owner_id)
-  WITH CHECK (auth.uid() = owner_id);
-
--- RLS: Users can delete own tags
-CREATE POLICY "Users can delete own tags" ON tags
-  FOR DELETE USING (auth.uid() = owner_id);
-
--- Indexes
-CREATE INDEX idx_tags_owner_id ON tags(owner_id);
+-- Indexes for common queries
+CREATE INDEX idx_country_timestamp ON electricity_observations(country_code, timestamp DESC);
+CREATE INDEX idx_metric_timestamp ON electricity_observations(metric, timestamp DESC);
+CREATE INDEX idx_country_metric_timestamp ON electricity_observations(country_code, metric, timestamp DESC);
+CREATE INDEX idx_timestamp ON electricity_observations(timestamp DESC);
 ```
 
 ## Schema Design
+
+### GridLens: Public Data Model
+
+Unlike typical apps, GridLens electricity observations are **public**:
+- All authenticated users can read the same data
+- No `owner_id` or user-specific access control needed
+- Backend-only writes (no API INSERT/UPDATE/DELETE)
 
 ### Primary Keys
 
 Use UUID with `gen_random_uuid()`:
 
 ```sql
-CREATE TABLE projects (
+CREATE TABLE electricity_observations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ...
 );
 ```
 
-### Ownership
+### Uniqueness Constraints
 
-Every table with user data needs an owner:
+Prevent duplicate observations:
 
 ```sql
-CREATE TABLE projects (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+CREATE TABLE electricity_observations (
   ...
+  country_code text NOT NULL,
+  timestamp timestamp with time zone NOT NULL,
+  metric text NOT NULL,
+  ...
+  UNIQUE(country_code, timestamp, metric)
 );
 ```
+
+This ensures same observation can't be inserted twice (critical for idempotent ingestion).
 
 ### Timestamps
 
 Track creation and updates:
 
 ```sql
-CREATE TABLE projects (
+CREATE TABLE electricity_observations (
   ...
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
 );
 ```
 
+All timestamps stored in UTC (`timestamp with time zone`).
+
 ### Constraints
 
 Enforce data integrity:
 
 ```sql
-CREATE TABLE projects (
+CREATE TABLE electricity_observations (
   ...
-  name text NOT NULL,
-  description text,
-  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'archived')),
-  UNIQUE(owner_id, name),
+  value_mw numeric(12,2) NOT NULL,
+  CHECK (value_mw >= 0),  -- Power must be non-negative
+  
+  country_code text NOT NULL,
+  CHECK (country_code ~ '^[A-Z]{2}$'),  -- 2-letter country code
+  
+  metric text NOT NULL,
+  CHECK (metric IN ('load', 'solar', 'wind_onshore', ...)),  -- Valid metrics only
 );
 ```
 
 ## Row Level Security (RLS)
 
-Every table with user data needs RLS:
+### GridLens Data Access Model
+
+- **Public read**: All authenticated users can read electricity data
+- **Backend-only write**: Only backend services write (no API INSERT/UPDATE/DELETE)
 
 ```sql
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-```
+ALTER TABLE electricity_observations ENABLE ROW LEVEL SECURITY;
 
-Define explicit policies for each operation:
+-- Allow authenticated users to read all observations
+CREATE POLICY "authenticated_read" ON electricity_observations
+  FOR SELECT USING (auth.role() = 'authenticated');
 
-```sql
--- SELECT: Users can read their own projects
-CREATE POLICY "Users can read own projects" ON projects
-  FOR SELECT USING (auth.uid() = owner_id);
+-- Deny INSERT from API (backend only)
+CREATE POLICY "deny_insert" ON electricity_observations
+  FOR INSERT WITH CHECK (false);
 
--- INSERT: Users can create projects
-CREATE POLICY "Users can create projects" ON projects
-  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+-- Deny UPDATE from API
+CREATE POLICY "deny_update" ON electricity_observations
+  FOR UPDATE WITH CHECK (false);
 
--- UPDATE: Users can update their own projects
-CREATE POLICY "Users can update own projects" ON projects
-  FOR UPDATE USING (auth.uid() = owner_id)
-  WITH CHECK (auth.uid() = owner_id);
-
--- DELETE: Users can delete their own projects
-CREATE POLICY "Users can delete own projects" ON projects
-  FOR DELETE USING (auth.uid() = owner_id);
+-- Deny DELETE from API
+CREATE POLICY "deny_delete" ON electricity_observations
+  FOR DELETE USING (false);
 ```
 
 ## Indexes
 
-Add indexes for:
-- Foreign keys
-- Search fields
-- Frequently filtered columns
+Add indexes for common queries (Phase 2):
 
 ```sql
-CREATE INDEX idx_projects_owner_id ON projects(owner_id);
-CREATE INDEX idx_projects_created_at ON projects(created_at DESC);
+-- Query by country and timestamp (latest load for NL)
+CREATE INDEX idx_country_timestamp ON electricity_observations(country_code, timestamp DESC);
+
+-- Query by metric and timestamp (all solar observations)
+CREATE INDEX idx_metric_timestamp ON electricity_observations(metric, timestamp DESC);
+
+-- Query by all three (load for NL in date range)
+CREATE INDEX idx_country_metric_timestamp ON electricity_observations(country_code, metric, timestamp DESC);
+
+-- Pure timestamp queries (all observations in timeframe)
+CREATE INDEX idx_timestamp ON electricity_observations(timestamp DESC);
 ```
+
+**Index Strategy**: Start with the most common queries (country + timestamp), add more as needed.
 
 ## Testing RLS Locally
 
 In Supabase Studio or psql:
 
 ```sql
--- Set a specific user
-SET request.jwt.claims = '{"sub":"user-uuid","email":"user@example.com"}';
+-- Set a specific user role
+SET request.jwt.claims = '{"sub":"user-uuid","role":"authenticated"}';
 
 -- Queries now respect RLS
-SELECT * FROM projects;  -- Only shows projects owned by that user
+SELECT * FROM electricity_observations WHERE country_code = 'NL';  -- Works
+
+-- Try to insert (should fail)
+INSERT INTO electricity_observations (...) VALUES (...);  -- Denied by RLS
 ```
 
 ## No Destructive Changes
@@ -192,16 +226,17 @@ Never drop columns or tables without explicit approval:
 
 ```sql
 -- ✅ Safe: Add column with default
-ALTER TABLE projects ADD COLUMN status text DEFAULT 'active';
+ALTER TABLE electricity_observations ADD COLUMN new_field text DEFAULT 'value';
 
 -- ❌ Unsafe: Drop column
-ALTER TABLE projects DROP COLUMN deprecated_field;
+ALTER TABLE electricity_observations DROP COLUMN deprecated_field;
 
 -- ❌ Unsafe: Drop table
-DROP TABLE projects;
+DROP TABLE electricity_observations;
 ```
 
 If removal is necessary, propose the migration with:
 1. Clear reason
-2. Backup plan
+2. Backup plan  
 3. Rollback strategy
+4. Data migration path

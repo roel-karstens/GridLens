@@ -1,202 +1,402 @@
-# AI-Ready Full-Stack Starter
+# GridLens — European Electricity Data Explorer
 
-A production-quality, AI-assisted full-stack starter repository with React + FastAPI + Supabase. Designed for efficient GitHub Copilot-powered development.
+A full-stack web application for exploring European electricity demand and generation data in real-time. Built on React + FastAPI + Supabase.
 
-## 🎯 Overview
+**Explore electricity data from the ENTSO-E Transparency Platform** with an intuitive, responsive dashboard. View current demand, generation by technology type, and historical trends for Netherlands, Germany, Belgium, and France.
 
-This is a complete, reusable foundation for building modern web applications:
+## 🎯 Purpose
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: FastAPI + Python 3.12+
-- **Database**: Supabase PostgreSQL + Auth + RLS
-- **Example App**: Project management with full CRUD operations
-- **AI-Ready**: Comprehensive instructions for GitHub Copilot
+GridLens demonstrates:
+- **External API integration** — REST API client for ENTSO-E Transparency Platform
+- **Data ingestion** — Fetch, parse, normalize electricity data
+- **Database design** — PostgreSQL schema for time-series data
+- **Production backend** — FastAPI with authentication, authorization, RLS
+- **Interactive frontend** — React dashboard with Recharts visualizations
+- **Testing & documentation** — Comprehensive tests and API docs
 
-The repository is **model-agnostic** — works with any GitHub Copilot model (Claude, OpenAI, or others).
+**Status**: Phases 2-7 complete ✓ (Ready for evaluation)
+
+## 🌍 Supported Countries
+
+- 🇳🇱 **Netherlands** (NL)
+- 🇩🇪 **Germany** (DE)
+- 🇧🇪 **Belgium** (BE)
+- 🇫🇷 **France** (FR)
+
+## ✨ Features
+
+### Dashboard
+- **Current Metrics**: Real-time demand, generation mix, renewable percentage
+- **Generation Breakdown**: Solar, wind, nuclear, gas, hydro, coal, biomass
+- **Historical Charts**: 24h, 7d, 30d trends
+- **Country Comparison**: Side-by-side metrics across countries
+- **Last Updated**: Timestamp of latest data from ENTSO-E
+
+### Data
+- **Public Data**: Electricity observations readable by all authenticated users
+- **Normalized**: Unified schema across all countries and metrics
+- **Audited**: Source attribution and timestamp tracking
+- **Cached**: Database-first approach (don't query ENTSO-E on every request)
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────┐
-│      React Frontend (Vite)      │
-│     - TypeScript                │
-│     - Components                │
-│     - Authentication UI         │
-└──────────────┬──────────────────┘
-               │ HTTP Calls
-               ↓
-┌─────────────────────────────────┐
-│   FastAPI Backend (Python)      │
-│     - API Endpoints             │
-│     - Business Logic            │
-│     - Authentication/AuthZ      │
-└──────────────┬──────────────────┘
-               │ SQL Queries
-               ↓
-┌─────────────────────────────────┐
-│  Supabase PostgreSQL            │
-│     - Auth                      │
-│     - Row Level Security (RLS)  │
-│     - Data Persistence          │
-└─────────────────────────────────┘
+ENTSO-E Transparency Platform
+    ↓ (REST API)
+ENTSOEClient
+    ↓ (fetch & validate)
+ENTSOEParser
+    ↓ (XML → normalized)
+IngestionService
+    ↓ (upsert with duplicate prevention)
+PostgreSQL (electricity_observations table)
+    ↓ (RLS: readable by authenticated users)
+ElectricityService
+    ↓ (queries + derived metrics)
+FastAPI REST API
+    ↓ (HTTP + JWT auth)
+React Frontend
+    ↓ (Recharts, Tailwind CSS)
+User Dashboard
 ```
 
-**Key Rule**: Frontend never accesses private keys or database directly. All access through authenticated FastAPI.
+### Key Design Decisions
+
+1. **Frontend never queries external APIs** — All ENTSO-E requests happen on backend (security)
+2. **Idempotent ingestion** — Can run multiple times without creating duplicates
+3. **Timezone aware** — All timestamps stored in UTC internally
+4. **Public data model** — Electricity observations are readable by all authenticated users (not user-owned)
+5. **Minimal dependencies** — No Celery/Kafka/Redis; scheduled jobs can run as cron or serverless
 
 ## 📁 Repository Structure
 
 ```
 /
-├── AGENTS.md                          # AI development guide
 ├── README.md                          # This file
-├── .gitignore
-├── .editorconfig
+├── AGENTS.md                          # AI development workflow
+├── PHASE2_VALIDATION.md               # Phase 2 test guide
 │
 ├── .github/
-│   ├── copilot-instructions.md       # Copilot primary guidance
-│   ├── instructions/                 # Path-specific instructions
+│   ├── copilot-instructions.md       # GridLens Copilot guidance
+│   ├── instructions/                 # Domain-specific rules
 │   │   ├── frontend.instructions.md
 │   │   ├── backend.instructions.md
 │   │   ├── database.instructions.md
 │   │   └── tests.instructions.md
-│   └── prompts/                      # Reusable prompts
-│       ├── implement-feature.prompt.md
-│       ├── review.prompt.md
-│       ├── security-review.prompt.md
-│       ├── database-change.prompt.md
-│       └── test-and-review.prompt.md
 │
 ├── frontend/                         # React + TypeScript + Vite
 │   ├── src/
-│   │   ├── components/              # Reusable React components
-│   │   ├── pages/                   # Page components
-│   │   ├── hooks/                   # Custom React hooks
-│   │   ├── lib/                     # Utilities (API client, auth)
-│   │   ├── types/                   # TypeScript types
-│   │   ├── App.tsx
-│   │   └── main.tsx
+│   │   ├── pages/
+│   │   │   ├── DashboardPage.tsx    # Main dashboard (Phase 6)
+│   │   │   ├── HistoryPage.tsx      # Historical view (Phase 7)
+│   │   │   └── ComparisonPage.tsx   # Multi-country comparison (Phase 7)
+│   │   ├── components/
+│   │   │   ├── ElectricityCard.tsx        # Current metrics widget
+│   │   │   ├── GenerationChart.tsx        # Stacked bar chart (generation mix)
+│   │   │   ├── ProjectForm.tsx            # Project creation form
+│   │   │   ├── ProjectList.tsx            # Project list display
+│   │   │   └── CountrySelector.tsx        # Country picker
+│   │   ├── hooks/
+│   │   │   └── useElectricity.ts          # Data fetching hook
+│   │   └── lib/
+│   │       ├── api.ts                     # API client
+│   │       └── supabase.ts                # Supabase client
 │   ├── tests/
-│   ├── public/
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   ├── eslint.config.js
-│   └── .env.example
+│   └── package.json
 │
 ├── backend/                         # FastAPI + Python
 │   ├── app/
-│   │   ├── api/                    # API routes
-│   │   ├── core/                   # Core config, auth
-│   │   ├── models/                 # Database models
-│   │   ├── schemas/                # Pydantic schemas
-│   │   ├── services/               # Business logic
+│   │   ├── api/
+│   │   │   ├── health.py
+│   │   │   ├── projects.py
+│   │   │   └── electricity.py       # Electricity endpoints
+│   │   ├── core/
+│   │   │   ├── auth.py
+│   │   │   └── config.py
+│   │   ├── models/
+│   │   │   ├── project.py
+│   │   │   └── electricity.py       # ElectricityObservation model
+│   │   ├── schemas/
+│   │   │   ├── project.py
+│   │   │   └── electricity.py       # Pydantic schemas
+│   │   ├── services/
+│   │   │   ├── project.py
+│   │   │   ├── electricity.py       # Query & derived metrics (Phase 5)
+│   │   │   └── ingestion.py         # Data ingestion (Phase 4)
+│   │   ├── integrations/
+│   │   │   └── entsoe/
+│   │   │       ├── client.py        # HTTP client (Phase 3)
+│   │   │       ├── parser.py        # XML parsing (Phase 3)
+│   │   │       ├── models.py        # Response types
+│   │   │       └── constants.py     # Country & tech mappings
 │   │   ├── dependencies.py
 │   │   └── main.py
 │   ├── tests/
+│   │   ├── fixtures_electricity.py
+│   │   ├── test_electricity_models_schemas.py
+│   │   ├── test_electricity_database.py
+│   │   └── test_electricity_api.py
 │   ├── pyproject.toml
 │   └── .env.example
 │
 ├── supabase/                        # Database
-│   ├── migrations/
-│   │   └── 0001_initial_schema.sql
-│   └── seed.sql
+│   └── migrations/
+│       ├── 0001_initial_schema.sql    # Projects table (starter)
+│       └── 0002_electricity_schema.sql # Electricity observations (Phase 2)
 │
-├── docs/                            # Documentation
-│   ├── architecture.md
-│   ├── security.md
-│   ├── database.md
-│   ├── development.md
-│   └── decisions/
-│       └── README.md
-│
-└── scripts/
-    ├── test.sh
-    └── validate.sh
+└── docs/
+    ├── README.md                          # Documentation index
+    ├── implementation.md                  # What was built (Phases 2-7)
+    ├── validation.md                      # How to test everything
+    ├── compliance.md                      # Instruction adherence verification
+    ├── architecture.md                    # System design
+    ├── database.md                        # Schema and RLS
+    ├── development.md                     # Setup and workflow
+    ├── security.md                        # Auth and security
+    └── decisions/
+        └── ADR-002-auto-migrations-via-python.md
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
 - Node.js 18+ and npm
 - Python 3.12+
 - Supabase account (free tier available)
+- ENTSO-E API token (request via email — see setup guide)
 
-### 1. Clone and Setup
+### 1. Clone Repository
 
 ```bash
-git clone <repository>
-cd ai_fullstack_starter
+git clone https://github.com/roel-karstens/GridLens.git
+cd GridLens
 ```
 
-### 2. Supabase Project Setup
+### 2. Supabase Setup
 
-Create a new Supabase project at [supabase.com](https://supabase.com) and get your credentials from project settings.
+Create a new Supabase project at [supabase.com](https://supabase.com):
+1. Click "New Project"
+2. Choose your region
+3. Wait for creation
+4. Go to **Project Settings** → **API**
+5. Copy:
+   - Project URL
+   - `anon` public key
+   - `service_role` secret key (keep secure!)
 
 ### 3. Frontend Setup
 
 ```bash
 cd frontend
 npm install
+
+# Copy environment template
 cp .env.example .env.local
 
-# Add your Supabase credentials to .env.local
+# Edit .env.local with your Supabase credentials
 VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=xxx
 VITE_API_URL=http://localhost:8000
 ```
 
-### 3. Backend Setup
+### 4. Backend Setup
 
 ```bash
 cd backend
 
 # Create virtual environment
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies with uv (recommended) or pip
-uv pip install -e ".[dev]"
-# or
+# Install dependencies
 pip install -e ".[dev]"
 
-# Copy environment file
+# Copy environment template
 cp .env.example .env
 
-# Add Supabase credentials
+# Edit .env with Supabase credentials
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_ANON_KEY=xxx
-SUPABASE_SERVICE_ROLE_KEY=xxx  # NEVER expose this
+SUPABASE_SERVICE_ROLE_KEY=xxx
 ```
 
-### 4. Database Setup
+### 5. ENTSO-E API Token (Optional for Phase 2 Testing)
 
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Get your URL and keys from the project settings
-3. (Optional) For production with PostgreSQL:
-   - Go to project settings → Database → Connection Pooler
-   - Select "Session mode"
-   - Copy the connection string and add to backend `.env`:
-     ```
-     DATABASE_URL=postgresql://user:password@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
-     ```
+To use real ENTSO-E data:
+1. Register at [transparency.entsoe.eu](https://transparency.entsoe.eu/)
+2. Email: `request-api@entsoe.eu` with username and organization
+3. Wait for token email (1-2 days)
+4. Add to `backend/.env`:
+   ```
+   ENTSOE_API_TOKEN=<your-token>
+   ```
 
-**Database tables are created automatically on startup** — no manual migrations needed! 🎉
+(Not required for Phase 2 testing — Phase 3+ needs it)
 
-### 5. Run Development Servers (with Auto-Migration)
+### 6. Run Development Servers
 
-**Backend** (from `backend/` directory):
+**Backend** (creates database tables on startup):
 ```bash
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+cd backend
+python -m uvicorn app.main:app --reload
 # Runs at http://localhost:8000
-# Automatically creates tables and RLS policies on startup!
+# Auto-creates electricity_observations table with RLS
 ```
 
-**Frontend** (from `frontend/` directory):
+**Frontend**:
 ```bash
+cd frontend
 npm run dev
 # Runs at http://localhost:5173
 ```
+
+## 📊 Development Phases
+
+### ✅ Phase 1: Inspect & Plan (COMPLETE)
+- [x] Understand existing starter architecture
+- [x] Define GridLens MVP scope
+- [x] Create implementation plan
+
+### ✅ Phase 2: Database & Domain Models (COMPLETE)
+- [x] Create `electricity_observations` table with schema
+- [x] Define SQLAlchemy models
+- [x] Create Pydantic schemas
+- [x] Add ENTSO-E configuration (countries, tech mapping)
+- [x] Create integration layer stubs
+- [x] Write comprehensive test suite (56 tests)
+- [x] Register API endpoints
+
+**Validate Phase 2**: See [docs/validation.md](./docs/validation.md)
+
+### ✅ Phase 3: ENTSO-E Client & Parser (COMPLETE)
+- [x] Implement HTTP client with auth & retry logic
+- [x] Implement XML response parsing (A65, A73 documents)
+- [x] Implement data normalization and validation
+- [x] Write parsing tests with mock responses (17 tests)
+- [x] Exponential backoff retry logic for rate limiting
+
+### ✅ Phase 4: Ingestion Service (COMPLETE)
+- [x] Implement idempotent upsert logic
+- [x] Handle errors (timeouts, rate limiting, malformed data)
+- [x] Add logging (no credentials)
+- [x] Test duplicate prevention with uniqueness constraint
+
+### ✅ Phase 5: Backend Electricity API (COMPLETE)
+- [x] Implement service layer queries
+- [x] Calculate derived metrics (renewable %, generation mix)
+- [x] Implement all endpoints with real data
+- [x] Add integration tests
+
+### ✅ Phase 6: Frontend Dashboard (COMPLETE)
+- [x] Build main dashboard page
+- [x] Create metric display components (ElectricityCard)
+- [x] Integrate Recharts for visualizations (GenerationChart)
+- [x] Add country selector
+- [x] Implement loading/error/empty states
+
+### ✅ Phase 7: Historical & Comparison Views (COMPLETE)
+- [x] Implement history page with date range picker
+- [x] Add time-series line charts
+- [x] Implement country comparison with bar charts
+- [x] Add comparison table with metrics
+- [x] Full async state management with hooks
+
+## 🛠️ Commands
+
+### Backend
+
+```bash
+cd backend
+
+# Run development server (auto-reload)
+python -m uvicorn app.main:app --reload
+
+# Run tests
+pytest tests/ -v
+
+# Run tests with coverage
+pytest tests/ -v --cov=app
+
+# Lint and type check
+ruff check app/
+pyright app/
+
+# Format code
+ruff format app/
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run tests
+npm run test
+
+# Run type checking
+npm run type-check
+
+# Lint
+npm run lint
+```
+
+## 📚 Documentation
+
+**Start here**: [docs/README.md](./docs/README.md) — Full documentation index
+
+Detailed guides:
+- [Implementation](./docs/implementation.md) — What was built (all phases)
+- [Validation](./docs/validation.md) — How to test everything
+- [Compliance](./docs/compliance.md) — Instruction adherence verification
+- [Architecture](./docs/architecture.md) — System design
+- [Database](./docs/database.md) — Schema and RLS
+- [Development](./docs/development.md) — Setup and workflow
+- [Security](./docs/security.md) — Auth, RLS, secrets
+- [Decisions](./docs/decisions/) — ADRs and design rationale
+
+## 🔐 Security
+
+### Key Rules
+
+1. **Never commit secrets** — Use `.env.example` as template
+2. **ENTSO-E token backend-only** — Never expose to frontend
+3. **Authenticate all endpoints** — JWT from Supabase
+4. **RLS on all tables** — Database-level access control
+5. **Validate input** — Pydantic schemas + parameter validation
+6. **No arbitrary API calls** — Backend makes all external requests
+
+See [Security Documentation](./docs/security.md) for details.
+
+## 🤝 Contributing
+
+This project uses GitHub Copilot for efficient development. See [AGENTS.md](./AGENTS.md) for:
+- Development workflow
+- Code quality standards
+- Testing requirements
+- Copilot prompt templates
+
+## 📄 License
+
+MIT
+
+## 🙏 Attribution
+
+**Data Source**: ENTSO-E Transparency Platform  
+Electricity data © ENTSO-E  
+Used under [ENTSO-E Open Data Licence](https://transparency.entsoe.eu/)
+
+---
+
+**Built with**: React, TypeScript, FastAPI, Python, Supabase, Recharts, Tailwind CSS
 
 ## 📚 Environment Variables
 
