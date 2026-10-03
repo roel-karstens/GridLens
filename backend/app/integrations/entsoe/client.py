@@ -50,13 +50,13 @@ class ENTSOEClient:
         self.timeout = REQUEST_TIMEOUT_SECONDS
 
     def _headers(self) -> dict[str, str]:
-        """Construct request headers with authentication.
+        """Construct request headers.
         
         Returns:
             Dictionary of HTTP headers.
         """
         return {
-            "SecurityToken": self.api_token,
+            "Accept": "application/xml",
         }
 
     async def get_query(
@@ -90,9 +90,10 @@ class ENTSOEClient:
             "documentType": document_type,
             "processType": process_type,
             "in_Domain": area_code,
-            "out_Domain": area_code,
+            "outBiddingZone_Domain": area_code,
             "periodStart": start_time.strftime("%Y%m%d%H%M"),
             "periodEnd": end_time.strftime("%Y%m%d%H%M"),
+            "securityToken": self.api_token,
             **kwargs,
         }
         
@@ -156,7 +157,7 @@ class ENTSOEClient:
         area_code: str,
         start_time: datetime,
         end_time: datetime,
-        process_type: str = "A18",
+        process_type: str = "A01",
     ) -> str:
         """Get actual total load (demand) data.
         
@@ -164,7 +165,7 @@ class ENTSOEClient:
             area_code: ENTSO-E bidding zone domain code
             start_time: Start of query period (UTC)
             end_time: End of query period (UTC)
-            process_type: Process type (default: realtime)
+            process_type: Process type (default: day-ahead)
             
         Returns:
             Raw XML response.
@@ -184,7 +185,7 @@ class ENTSOEClient:
         area_code: str,
         start_time: datetime,
         end_time: datetime,
-        process_type: str = "A18",
+        process_type: str = "A16",
     ) -> str:
         """Get aggregated generation per type data.
         
@@ -192,7 +193,7 @@ class ENTSOEClient:
             area_code: ENTSO-E bidding zone domain code
             start_time: Start of query period (UTC)
             end_time: End of query period (UTC)
-            process_type: Process type (default: realtime)
+            process_type: Process type (default: intraday)
             
         Returns:
             Raw XML response.

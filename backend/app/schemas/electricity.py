@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 
 
 class ElectricityObservationCreate(BaseModel):
@@ -25,6 +25,8 @@ class ElectricityObservationCreate(BaseModel):
 
 class ElectricityObservationRead(BaseModel):
     """Schema for reading electricity observations (API response)."""
+    
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})
 
     id: str = Field(..., description="Unique observation ID")
     country_code: str = Field(..., description="ISO 2-letter country code")
@@ -36,10 +38,11 @@ class ElectricityObservationRead(BaseModel):
     source_dataset: str = Field(..., description="Dataset type")
     source_timestamp: datetime | None = Field(None, description="When ENTSO-E generated this data")
     created_at: datetime = Field(..., description="When we ingested this observation")
-
-    class Config:
-        """Pydantic config for SQLAlchemy compatibility."""
-        from_attributes = True
+    
+    @field_serializer('value_mw')
+    def serialize_decimal(self, value: Decimal) -> float:
+        """Serialize Decimal to float for JSON compatibility."""
+        return float(value)
 
 
 class CurrentMetricResponse(BaseModel):
@@ -60,6 +63,8 @@ class CurrentStatusResponse(BaseModel):
     
     Aggregates multiple metrics for dashboard display.
     """
+    
+    model_config = ConfigDict(json_encoders={Decimal: float})
 
     country_code: str = Field(..., description="ISO 2-letter country code")
     timestamp: datetime = Field(..., description="Timestamp of observations")
@@ -84,6 +89,14 @@ class CurrentStatusResponse(BaseModel):
     # Metadata
     source: str = Field(default="ENTSO-E", description="Data source")
     last_updated: datetime = Field(..., description="When this data was last updated")
+    
+    @field_serializer('load_mw', 'total_generation_mw', 'renewable_generation_mw', 
+                      'renewable_share_percent', 'solar_mw', 'wind_onshore_mw', 
+                      'wind_offshore_mw', 'nuclear_mw', 'gas_mw', 'coal_mw', 
+                      'hydro_mw', 'biomass_mw', 'other_mw')
+    def serialize_decimal(self, value: Decimal | None) -> float | None:
+        """Serialize Decimal to float for JSON compatibility."""
+        return float(value) if value is not None else None
 
 
 class HistoricalDataResponse(BaseModel):
@@ -91,6 +104,8 @@ class HistoricalDataResponse(BaseModel):
     
     Returns time series data for charting.
     """
+    
+    model_config = ConfigDict(json_encoders={Decimal: float})
 
     country_code: str = Field(..., description="ISO 2-letter country code")
     metric: str = Field(..., description="Electricity metric")
@@ -105,10 +120,17 @@ class ComparisonDataResponse(BaseModel):
     
     Returns data for comparison table/chart.
     """
+    
+    model_config = ConfigDict(json_encoders={Decimal: float})
 
     metric: str = Field(..., description="Electricity metric being compared")
     timestamp: datetime = Field(..., description="Timestamp of observations")
     countries: dict[str, Decimal | None] = Field(..., description="Country code -> value mapping")
+    
+    @field_serializer('countries')
+    def serialize_countries(self, value: dict[str, Decimal | None]) -> dict[str, float | None]:
+        """Serialize Decimal values to float for JSON compatibility."""
+        return {k: float(v) if v is not None else None for k, v in value.items()}
 
 
 class GenerationMixResponse(BaseModel):
@@ -116,6 +138,8 @@ class GenerationMixResponse(BaseModel):
     
     Returns current generation by technology type.
     """
+    
+    model_config = ConfigDict(json_encoders={Decimal: float})
 
     country_code: str = Field(..., description="ISO 2-letter country code")
     timestamp: datetime = Field(..., description="Timestamp of observations")
@@ -126,3 +150,13 @@ class GenerationMixResponse(BaseModel):
     )
     total_generation_mw: Decimal = Field(..., description="Sum of all generation types")
     source: str = Field(default="ENTSO-E", description="Data source")
+    
+    @field_serializer('generation_by_type')
+    def serialize_generation_by_type(self, value: dict[str, Decimal | None]) -> dict[str, float | None]:
+        """Serialize Decimal values to float for JSON compatibility."""
+        return {k: float(v) if v is not None else None for k, v in value.items()}
+    
+    @field_serializer('total_generation_mw')
+    def serialize_total_generation(self, value: Decimal) -> float:
+        """Serialize Decimal to float for JSON compatibility."""
+        return float(value)

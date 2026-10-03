@@ -52,10 +52,6 @@ export function App() {
     );
   }
 
-  if (!user) {
-    return <AuthPage onAuthSuccess={(newUser) => setUser(newUser)} />;
-  }
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -104,13 +100,24 @@ export function App() {
               </div>
 
               <div className="flex items-center gap-4 pl-4 border-l border-slate-300">
-                <span className="text-sm text-slate-600">{user.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-semibold"
-                >
-                  Logout
-                </button>
+                {user ? (
+                  <>
+                    <span className="text-sm text-slate-600">{user.email}</span>
+                    <button
+                      onClick={handleLogout}
+                      className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-semibold"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setUser({ id: 'demo', email: 'demo@example.com' })}
+                    className="px-4 py-2 text-sm bg-violet-600 text-white hover:bg-violet-700 rounded-lg font-semibold"
+                  >
+                    Demo Login
+                  </button>
+                )}
               </div>
             </div>
           </div>

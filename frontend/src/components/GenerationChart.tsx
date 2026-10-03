@@ -41,7 +41,13 @@ export const GenerationChart: React.FC<GenerationChartProps> = ({
   if (!data || Object.keys(data).length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-500 text-center">No generation data available</p>
+        <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
+        <div className="flex items-center justify-center h-64 bg-slate-50 rounded border-2 border-dashed border-slate-300">
+          <div className="text-center">
+            <p className="text-slate-500 font-semibold">No generation data available</p>
+            <p className="text-slate-400 text-sm mt-2">Generation breakdown data from ENTSO-E intraday is limited</p>
+          </div>
+        </div>
       </div>
     );
   }

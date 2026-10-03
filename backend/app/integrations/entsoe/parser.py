@@ -1,7 +1,7 @@
 """ENTSO-E XML response parser and data normalizer."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from xml.etree import ElementTree as ET
 
@@ -49,19 +49,25 @@ class ENTSOEParser:
         
         observations = []
         
-        # ENTSO-E XML structure: Publication/TimeSeries/Period/Point
-        # Find all TimeSeries elements
-        for timeseries in root.findall(".//TimeSeries"):
-            period = timeseries.find("Period")
+        # Extract namespace from root tag if present
+        ns = ""
+        if "}" in root.tag:
+            ns_part = root.tag.split("}")[0][1:]  # Extract namespace URL
+            ns = f"{{{ns_part}}}"
+        
+        # ENTSO-E XML structure: GL_MarketDocument/TimeSeries/Period/Point
+        # Find all TimeSeries elements (with or without namespace)
+        for timeseries in root.findall(f".//{ns}TimeSeries"):
+            period = timeseries.find(f"{ns}Period")
             if period is None:
                 continue
             
             # Get time interval
-            time_interval = period.find("timeInterval")
+            time_interval = period.find(f"{ns}timeInterval")
             if time_interval is None:
                 continue
             
-            start_elem = time_interval.find("start")
+            start_elem = time_interval.find(f"{ns}start")
             if start_elem is None or not start_elem.text:
                 continue
             
@@ -74,27 +80,51 @@ class ENTSOEParser:
                 logger.warning(f"Invalid timestamp in load XML: {start_elem.text}")
                 continue
             
+            # Get resolution for calculating point timestamps
+            resolution_elem = period.find(f"{ns}resolution")
+            resolution_minutes = 15  # Default to 15 minutes
+            
+            if resolution_elem is not None and resolution_elem.text:
+                # Parse ISO 8601 duration: PT15M, PT60M, etc.
+                res_text = resolution_elem.text
+                try:
+                    if "PT" in res_text:
+                        # Extract minutes from PT15M format
+                        if "M" in res_text:
+                            minutes_str = res_text.replace("PT", "").replace("M", "")
+                            resolution_minutes = int(minutes_str)
+                except (ValueError, IndexError):
+                    logger.debug(f"Could not parse resolution: {res_text}, using default 15 minutes")
+            
             # Parse each point in the period
-            for point in period.findall("Point"):
-                position_elem = point.find("position")
-                quantity_elem = point.find("quantity")
+            for point in period.findall(f"{ns}Point"):
+                position_elem = point.find(f"{ns}position")
+                quantity_elem = point.find(f"{ns}quantity")
                 
                 if position_elem is None or quantity_elem is None:
                     continue
                 
                 try:
+                    position = int(position_elem.text or 0)
                     quantity = float(quantity_elem.text or 0)
+                    
+                    # Calculate timestamp for this point
+                    # Position is 1-based, so position 1 is the first interval
+                    point_time = start_time + timedelta(
+                        minutes=resolution_minutes * (position - 1)
+                    )
+                    
                     observations.append(
                         LoadObservation(
-                            timestamp=start_time,
+                            timestamp=point_time,
                             value_mw=quantity,
                             source_timestamp=datetime.utcnow(),
                         )
                     )
                 except (ValueError, TypeError) as e:
                     logger.warning(
-                        f"Invalid quantity in load XML for {country_code}: "
-                        f"{quantity_elem.text}: {e}"
+                        f"Invalid data in load XML for {country_code}: "
+                        f"position={position_elem.text}, quantity={quantity_elem.text}: {e}"
                     )
                     continue
         
@@ -126,59 +156,39 @@ class ENTSOEParser:
         
         observations = []
         
-        # ENTSO-E XML structure: Publication/TimeSeries/Period/Point
+        # Extract namespace from root tag if present
+        ns = ""
+        if "}" in root.tag:
+            ns_part = root.tag.split("}")[0][1:]  # Extract namespace URL
+            ns = f"{{{ns_part}}}"
+        
+        # ENTSO-E XML structure: GL_MarketDocument/TimeSeries/Period/Point
         # Each TimeSeries represents one technology type
-        for timeseries in root.findall(".//TimeSeries"):
+        for timeseries in root.findall(f".//{ns}TimeSeries"):
             # Extract technology type (psrType)
-            mrid = timeseries.find("mRID")
+            psrtype_elem = timeseries.find(f"{ns}MktPSRType/{ns}psrType")
             psrtype = None
             
-            # Try to find psrType in attributes or elements
-            for attr_name, attr_val in timeseries.attrib.items():
-                if "psrType" in attr_name.lower():
-                    psrtype = attr_val
-                    break
+            if psrtype_elem is not None and psrtype_elem.text:
+                psrtype = psrtype_elem.text
             
+            # Alternative: try to find psrType in attributes or other locations
             if not psrtype:
-                # Try to extract from Period/timeInterval/resolution
-                period = timeseries.find("Period")
-                if period is not None:
-                    resolution = period.find("resolution")
-                    if resolution is not None and resolution.text:
-                        psrtype = resolution.text
+                for attr_name, attr_val in timeseries.attrib.items():
+                    if "psrType" in attr_name.lower():
+                        psrtype = attr_val
+                        break
             
-            # For ENTSOE A73 documents, psrType is in the mRID or via another means
-            # Try alternative parsing: look at the timeseries structure
-            if not psrtype:
-                # Extract psrType from the Period via business process
-                period = timeseries.find("Period")
-                if period is not None:
-                    for elem in period:
-                        if "psrType" in str(elem.tag).lower():
-                            psrtype = elem.text
-                            break
-            
-            # Fallback: try to extract from attributes on Point level
-            if not psrtype:
-                period = timeseries.find("Period")
-                if period is not None:
-                    point = period.find("Point")
-                    if point is not None:
-                        for attr_name in point.attrib:
-                            if "psrType" in attr_name.lower():
-                                psrtype = point.attrib[attr_name]
-                                break
-            
-            period = timeseries.find("Period")
+            period = timeseries.find(f"{ns}Period")
             if period is None:
                 continue
             
             # Get time interval
-            time_interval = period.find("timeInterval")
+            time_interval = period.find(f"{ns}timeInterval")
             if time_interval is None:
                 continue
             
-            start_elem = time_interval.find("start")
+            start_elem = time_interval.find(f"{ns}start")
             if start_elem is None or not start_elem.text:
                 continue
             
@@ -191,22 +201,44 @@ class ENTSOEParser:
                 logger.warning(f"Invalid timestamp in generation XML: {start_elem.text}")
                 continue
             
+            # Get resolution for calculating point timestamps
+            resolution_elem = period.find(f"{ns}resolution")
+            resolution_minutes = 60  # Default to 60 minutes for generation data
+            
+            if resolution_elem is not None and resolution_elem.text:
+                # Parse ISO 8601 duration: PT15M, PT60M, etc.
+                res_text = resolution_elem.text
+                try:
+                    if "PT" in res_text:
+                        if "M" in res_text:
+                            minutes_str = res_text.replace("PT", "").replace("M", "")
+                            resolution_minutes = int(minutes_str)
+                except (ValueError, IndexError):
+                    logger.debug(f"Could not parse resolution: {res_text}, using default 60 minutes")
+            
             # Parse each point (each technology measurement)
-            for point in period.findall("Point"):
-                quantity_elem = point.find("quantity")
+            for point in period.findall(f"{ns}Point"):
+                position_elem = point.find(f"{ns}position")
+                quantity_elem = point.find(f"{ns}quantity")
                 
-                if quantity_elem is None:
+                if position_elem is None or quantity_elem is None:
                     continue
                 
                 try:
+                    position = int(position_elem.text or 0)
                     quantity = float(quantity_elem.text or 0)
+                    
+                    # Calculate timestamp for this point
+                    point_time = start_time + timedelta(
+                        minutes=resolution_minutes * (position - 1)
+                    )
                     
                     # Use psrtype if found, otherwise use a generic identifier
                     technology = psrtype or "unknown"
                     
                     observations.append(
                         GenerationObservation(
-                            timestamp=start_time,
+                            timestamp=point_time,
                             technology=technology,
                             value_mw=quantity,
                             source_timestamp=datetime.utcnow(),
@@ -214,13 +246,13 @@ class ENTSOEParser:
                     )
                 except (ValueError, TypeError) as e:
                     logger.warning(
-                        f"Invalid quantity in generation XML for {country_code}: "
-                        f"{quantity_elem.text}: {e}"
+                        f"Invalid data in generation XML for {country_code}: "
+                        f"position={position_elem.text}, quantity={quantity_elem.text}: {e}"
                     )
                     continue
         
         if not observations:
-            logger.warning(f"No generation observations found in XML for {country_code}")
+            logger.debug(f"No generation observations found in XML for {country_code}")
         
         return observations
 

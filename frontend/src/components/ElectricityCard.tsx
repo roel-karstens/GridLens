@@ -77,7 +77,7 @@ export const ElectricityCard: React.FC<ElectricityCardProps> = ({
         <div className="border-l-4 border-emerald-500 pl-4">
           <p className="text-slate-500 text-sm">Total Generation</p>
           <p className="text-2xl font-bold text-slate-900">
-            {data.total_generation_mw ? `${(data.total_generation_mw / 1000).toFixed(1)} GW` : '—'}
+            {data.total_generation_mw && data.total_generation_mw > 0 ? `${(data.total_generation_mw / 1000).toFixed(1)} GW` : <span className="text-sm text-slate-400">(No data)</span>}
           </p>
         </div>
       </div>

@@ -101,7 +101,7 @@ PROCESS_TYPE_INTRADAY = "A16"  # Intraday
 PROCESS_TYPE_DAY_AHEAD = "A01"  # Day Ahead
 
 # Default process type for historical data retrieval
-DEFAULT_PROCESS_TYPE = PROCESS_TYPE_REALTIME
+DEFAULT_PROCESS_TYPE = PROCESS_TYPE_DAY_AHEAD  # A01 works with both A65 and A73
 
 # Time resolution
 DEFAULT_TIME_PERIOD_HOURS = 24  # Default to last 24 hours

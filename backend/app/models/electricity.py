@@ -1,7 +1,7 @@
 """SQLAlchemy model for electricity observations."""
 
 from datetime import datetime
-from uuid import UUID
+from uuid import uuid4
 
 from sqlalchemy import Column, String, Numeric, DateTime, UniqueConstraint, Index
 
@@ -31,7 +31,7 @@ class ElectricityObservation(Base):
     __tablename__ = "electricity_observations"
 
     # Primary key
-    id = Column(String, primary_key=True, default=lambda: str(UUID(int=0)))
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
 
     # Geography
     country_code = Column(String(2), nullable=False, index=True)

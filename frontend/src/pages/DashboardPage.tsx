@@ -67,18 +67,21 @@ export function DashboardPage() {
             <div className="space-y-3 text-sm text-gray-600">
               <p>
                 <strong className="text-gray-800">Current Demand:</strong> The electricity load
-                consumed by the country.
+                consumed by the country (real-time data).
               </p>
               <p>
                 <strong className="text-gray-800">Generation:</strong> Total electricity
-                production by all sources.
+                production by all sources (data availability limited).
               </p>
               <p>
                 <strong className="text-gray-800">Renewable Share:</strong> Percentage of
-                generation from renewable sources (solar, wind, hydro).
+                generation from renewable sources.
               </p>
               <p className="text-xs text-gray-500 pt-3 border-t">
-                Data updates every 15 minutes from ENTSO-E.
+                ⚡ Demand data: Available from ENTSO-E Actual Total Load (A65)
+              </p>
+              <p className="text-xs text-gray-500">
+                📊 Generation data: Limited availability from intraday generation dataset
               </p>
             </div>
           </div>

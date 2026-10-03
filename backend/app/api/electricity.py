@@ -38,7 +38,6 @@ async def list_countries() -> list[dict]:
 @router.get("/current/{country_code}", response_model=CurrentStatusResponse)
 async def get_current_status(
     country_code: str,
-    user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> CurrentStatusResponse:
     """Get current electricity status for a country.
@@ -47,7 +46,6 @@ async def get_current_status(
     
     Args:
         country_code: ISO 2-letter country code (e.g., "NL")
-        user_id: Authenticated user ID
         db: Database session
         
     Returns:
@@ -69,14 +67,12 @@ async def get_current_status(
 @router.get("/generation/{country_code}", response_model=GenerationMixResponse)
 async def get_generation_mix(
     country_code: str,
-    user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> GenerationMixResponse:
     """Get current generation mix (breakdown by technology type).
     
     Args:
         country_code: ISO 2-letter country code
-        user_id: Authenticated user ID
         db: Database session
         
     Returns:
@@ -101,7 +97,6 @@ async def get_history(
     metric: str = Query(..., description="Electricity metric (load, solar, wind_onshore, etc.)"),
     start: str | None = Query(None, description="Start time (ISO 8601, default: 24h ago)"),
     end: str | None = Query(None, description="End time (ISO 8601, default: now)"),
-    user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> HistoricalDataResponse:
     """Get historical observations for a metric.
@@ -111,7 +106,6 @@ async def get_history(
         metric: Electricity metric
         start: Start time (ISO 8601 format, default: 24h ago)
         end: End time (ISO 8601 format, default: now)
-        user_id: Authenticated user ID
         db: Database session
         
     Returns:
@@ -159,7 +153,6 @@ async def get_history(
 async def compare_countries(
     countries: str = Query(..., description="Comma-separated country codes (e.g., 'NL,DE,BE')"),
     metric: str = Query(..., description="Electricity metric"),
-    user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ComparisonDataResponse:
     """Compare a metric across multiple countries.
@@ -167,7 +160,6 @@ async def compare_countries(
     Args:
         countries: Comma-separated country codes
         metric: Electricity metric
-        user_id: Authenticated user ID
         db: Database session
         
     Returns:

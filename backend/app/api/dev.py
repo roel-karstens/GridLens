@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.dependencies import get_db
 from app.models.project import Project
 from app.core.auth import get_current_user
+from app.services.ingestion import IngestionService
 
 router = APIRouter(prefix="/api/v1/dev", tags=["dev"])
 
@@ -43,6 +44,22 @@ class UserInfo(BaseModel):
     
     user_id: str
 
+
+class IngestionRequest(BaseModel):
+    """Request to ingest electricity data."""
+    
+    country_code: str
+    days: int = 1  # ENTSO-E A16 (intraday generation) limited to 1-day windows
+
+
+class IngestionResponse(BaseModel):
+    """Response from ingestion."""
+    
+    country_code: str
+    created: int
+    duplicate: int
+    failed: int
+    message: str
 
 
 @router.post("/token", response_model=TokenResponse)
@@ -123,4 +140,51 @@ async def debug_current_user(user_id: str = Depends(get_current_user)) -> UserIn
     
     return UserInfo(user_id=user_id)
 
+
+@router.post("/ingest", response_model=IngestionResponse)
+async def dev_ingest_data(
+    request: IngestionRequest,
+    db: Session = Depends(get_db),
+) -> IngestionResponse:
+    """
+    DEV ENDPOINT: Ingest electricity data from ENTSO-E.
+    
+    Only available in development mode.
+    
+    Args:
+        request: IngestionRequest with country_code and days
+        db: Database session
+        
+    Returns:
+        IngestionResponse with count of ingested records
+    """
+    if not DEV_MODE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dev endpoints only available in development mode",
+        )
+    
+    try:
+        service = IngestionService(db)
+        end_time = datetime.now(timezone.utc)
+        start_time = end_time - timedelta(days=request.days)
+        
+        result = await service.ingest_country_data(
+            request.country_code,
+            start_time,
+            end_time,
+        )
+        
+        return IngestionResponse(
+            country_code=request.country_code,
+            created=result.get("created", 0),
+            duplicate=result.get("duplicate", 0),
+            failed=result.get("failed", 0),
+            message=f"Successfully ingested data for {request.country_code}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ingestion failed: {str(e)}",
+        )
 
